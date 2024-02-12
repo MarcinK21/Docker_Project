@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista Zadań</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Lista Zadań</h1>
+
+    <form id="createListForm">
+        <input type="text" id="newListName" placeholder="Nazwa nowej listy" required>
+        <button type="submit">Utwórz Listę</button>
+    </form>
+
+    <select id="listSelector" onchange="loadTasks()">
+        <option value="">Wybierz listę zadań...</option>
+    </select>
+
+    <form id="addTaskForm">
+        <input type="text" id="taskInput" placeholder="Dodaj nowe zadanie" required>
+        <button type="submit">Dodaj Zadanie</button>
+    </form>
+    <ul id="tasksList"></ul>
+
+    <script>
+    function loadLists() {
+        $.getJSON('/lists', function(data) {
+            $('#listSelector').empty().append('<option value="">Wybierz listę zadań...</option>');
+            data.forEach(function(list) {
+                $('#listSelector').append(`<option value="${list}">${list}</option>`);
+            });
+        });
+    }
+
+    function loadTasks() {
+        var selectedList = $('#listSelector').val();
+        if (selectedList) {
+            $.getJSON(`/tasks/${selectedList}`, function(data) {
+                $('#tasksList').empty();
+                data.tasks.forEach(function(task, index) {
+                    $('#tasksList').append(`<li>${task.task} <button onclick="deleteTask('${selectedList}', ${index})">Usuń</button></li>`);
+                });
+            });
+        } else {
+            $('#tasksList').empty();
+        }
+    }
+
+    function deleteTask(listName, taskId) {
+        $.ajax({
+            url: `/tasks/${listName}/${taskId}`,
+            type: 'DELETE',
+            success: function(result) {
+                loadTasks(); // Odśwież listę zadań
+            },
+            error: function() {
+                alert('Błąd przy usuwaniu zadania.');
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        loadLists();
+
+        $('#createListForm').submit(function(event) {
+            event.preventDefault();
+            var listName = $('#newListName').val();
+            $.ajax({
+                url: '/lists',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({name: listName}),
+                success: function(response) {
+                    $('#newListName').val('');
+                    loadLists();
+                }
+            });
+        });
+
+        $('#addTaskForm').submit(function(event) {
+            event.preventDefault();
+            var selectedList = $('#listSelector').val();
+            var task = $('#taskInput').val();
+            $.ajax({
+                url: `/tasks/${selectedList}`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({task: task}),
+                success: function(response) {
+                    $('#taskInput').val('');
+                    loadTasks();
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

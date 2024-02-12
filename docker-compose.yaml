@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  app:
+    image: cineek/project_image:1.0.0
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    environment:
+      FLASK_ENV: development  # środowisko Flask umożliwiający debugowanie i automatyczne przeładowanie kodu
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
